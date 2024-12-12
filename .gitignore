@@ -32,3 +32,4 @@
 *.app
 
 src/primes/prime-in-irrat
+src/data-structs/rb-tree

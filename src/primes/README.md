@@ -1,6 +1,6 @@
 # Prime numbers
 
-Prime numbers are a topic of interest among mathematicians. They are natural numbers with only 2 factors: 1 and itself. It is such a simple property, but it is so unique that many  great minds have come up with numerous fascinating problems involving these numbers. More than just a theoretical curiosity, prime numbers have found their way into practical use in fields such as cryptography.
+Prime numbers are a topic of interest among mathematicians. They are natural numbers with only 2 factors: 1 and itself. It is a simple property, but many great minds have come up with numerous fascinating problems involving these numbers. More than just a theoretical curiosity, prime numbers have found their way into practical use in fields such as cryptography.
 
 Here I made some programs involving prime numbers. They don't necessarily do anything meaningful. I just thought they seemed interesting.
 
