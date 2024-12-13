@@ -273,16 +273,23 @@ int32_t rb_insert(struct rb_tree *tree, int32_t val)
         return ERR_NULL_TREE;
 
     // Find insertion point
-    NODE_ID *ins_point = &tree->root;
+    uint8_t ins_dir = 0; // 0 - left, 1 - right
+    NODE_ID curr = tree->root;
     NODE_ID parent = NULL_NODE;
-    while (*ins_point != NULL_NODE)
+    while (curr != NULL_NODE)
     {
-        struct rb_node *node = tree->data + *ins_point;
-        parent = *ins_point;
+        struct rb_node *node = tree->data + curr;
+        parent = curr;
         if (val < node->key)
-            ins_point = &node->left;
+        {
+            curr = node->left;
+            ins_dir = 0;
+        }
         else if (val > node->key)
-            ins_point = &node->right;
+        {
+            curr = node->right;
+            ins_dir = 1;
+        }
         else
             return 0; // Value already exists
     }
@@ -297,7 +304,12 @@ int32_t rb_insert(struct rb_tree *tree, int32_t val)
     new_node->left = NULL_NODE;
     new_node->right = NULL_NODE;
 
-    *ins_point = new_node_id;
+    if (tree->root == NULL_NODE)
+        tree->root = new_node_id;
+    else if (ins_dir == 0)
+        tree->data[parent].left = new_node_id;
+    else
+        tree->data[parent].right = new_node_id;
 
     rb_ins_fix(tree, new_node_id);
 
@@ -330,10 +342,11 @@ void rb_print(const struct rb_tree *tree)
 
 // Tree printing
 /*********************************/
-struct stack_node
+struct queue_node
 {
     NODE_ID id;
     uint32_t level;
+    uint32_t pos;
 };
 
 uint32_t rb_tree_height(const struct rb_tree *tree, NODE_ID id)
@@ -348,28 +361,65 @@ uint32_t rb_tree_height(const struct rb_tree *tree, NODE_ID id)
     return (lh > rh ? lh : rh) + 1;
 }
 
-void rb_print_tree(const struct rb_tree *tree)
+void print_indent(uint32_t indent)
+{
+    if (indent > 0)
+        printf("%*c", indent << 1, ' ');
+}
+
+// If key has >1 digits, the tree will look off
+void rb_pretty_print(const struct rb_tree *tree)
 {
     if (tree == NULL || tree->root == NULL_NODE)
         return;
 
     uint32_t height = rb_tree_height(tree, tree->root);
     printf("tree height: %d\n", height);
-    //struct stack_node *stack = (struct stack_node*)malloc((tree->capacity) * sizeof(struct stack_node));
-    //uint32_t size = 0;
-    //uint32_t level = 0;
 
-    //stack[size++] = (struct stack_node){
-    //    tree->root,
-    //    level
-    //};
+    // Max possible nodes is 2 * capacity (accounting for nil nodes)
+    struct queue_node *queue = (struct queue_node*)malloc((tree->capacity << 1) * sizeof(struct queue_node));
+    uint32_t size = 0;
+    uint32_t level = 0;
+    uint32_t curr = 0;
+    uint32_t curr_pos = 0;
 
-    //while (size > 0)
-    //{
-    //    
-    //}
+    uint32_t indent = (1 << height) - 1;
+    queue[size++] = (struct queue_node){ tree->root, level, indent };
 
-    //free(stack);
+    while (curr < size)
+    {
+        if (level < queue[curr].level)
+        {
+            // Reached next level
+            printf("\n");
+            level = queue[curr].level;
+            indent = (1 << (height - level)) - 1;
+            curr_pos = 0;
+        }
+
+        // Print indentation to node's pos
+        print_indent(queue[curr].pos - curr_pos);
+        curr_pos = queue[curr].pos + 1;
+
+        if (queue[curr].id == NULL_NODE)
+        {
+            printf("xx");
+        }
+        else
+        {
+            struct rb_node *node = tree->data + queue[curr].id;
+            printf("%d%c", node->key, node->color == RED ? 'r' : 'b');
+
+            const uint32_t pos_diff = (indent >> 1) + 1;
+
+            queue[size++] = (struct queue_node){ node->left, queue[curr].level + 1, queue[curr].pos - pos_diff };
+            queue[size++] = (struct queue_node){ node->right, queue[curr].level + 1, queue[curr].pos + pos_diff };
+        }
+
+        ++curr;
+    }
+
+    free(queue);
 }
 /*********************************/
 
@@ -380,13 +430,15 @@ int main()
     struct rb_tree rb;
     rb_init(&rb);
 
-    for (int i = 1; i < 7; ++i)
+    for (int i = 1; i < 20; ++i)
     {
         rb_insert(&rb, i);
         rb_print(&rb);
-        rb_print_tree(&rb);
         printf("\n");
     }
+
+    rb_pretty_print(&rb);
+    printf("\n\n");
 
     rb_free(&rb);
     return 0;
