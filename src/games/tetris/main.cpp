@@ -1,6 +1,7 @@
 #include <ncurses.h>
 
 #include "tetris.h"
+#include "time.h"
 
 void InitNCurses()
 {
@@ -34,8 +35,21 @@ int main()
     Tetris tetris;
     auto *tetWin = CreateTetrisWin(1, 0);
 
+    Time time;
+    float dtAccum = 0.0f;
+    constexpr auto dt = 1.0f / 60.0f;
+
+    time.Start();
     while (!tetris.GameOver())
     {
+        dtAccum += time.Lap();
+
+        while (dtAccum >= dt)
+        {
+            // TODO: Perform simulation step
+            dtAccum -= dt;
+        }
+
         mvprintw(0, 7, "%u", tetris.Score());
         tetris.PrintBoard(tetWin);
 
