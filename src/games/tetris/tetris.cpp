@@ -1,7 +1,5 @@
 #include "tetris.h"
 
-#include <iostream>
-
 Tetris::Tetris()
 {
     WipeBoard(); // This is fine since default init for board does nothing
@@ -12,24 +10,11 @@ void Tetris::Step()
     // TODO: Implement
 }
 
-void Tetris::PrintBoard() const
+void Tetris::PrintBoard(WINDOW *win) const
 {
-    // TODO: Is there a more efficient way to do this?
-    static constexpr auto SIZE = WIDTH * HEIGHT;
-
-    std::cout << "|----------";
-
-    for (auto i = 0; i < SIZE; ++i)
-    {
-        if (i % WIDTH == 0)
-            std::cout << "|" << std::endl << "|";
-
-        std::cout << board[i];
-    }
-
-    std::cout
-        << "|" << std::endl
-        << "|----------|" << std::endl;
+    for (auto y = 0; y < HEIGHT; ++y)
+        for (auto x = 0; x < WIDTH; ++x)
+            mvwaddch(win, y + 1, x + 1, board[y * WIDTH + x]);
 }
 
 bool Tetris::GameOver() const
@@ -37,6 +22,8 @@ bool Tetris::GameOver() const
     // TODO: Implement
     return false;
 }
+
+unsigned Tetris::Score() const { return score; }
 
 inline void Tetris::WipeBoard()
 {
