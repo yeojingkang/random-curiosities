@@ -14,7 +14,7 @@ void InitNCurses()
 
 WINDOW *CreateTetrisWin(int starty, int startx)
 {
-    auto *win = newwin(Tetris::HEIGHT + 2, Tetris::WIDTH + 2, starty, startx);
+    auto *win = newwin(Tetris::Board::HEIGHT + 2, Tetris::Board::WIDTH + 2, starty, startx);
     box(win, 0, 0); // Use default chars for vertical & horizontal lines
     return win;
 }
@@ -32,22 +32,24 @@ int main()
 
     mvprintw(0, 0, "Score: ");
 
-    Tetris tetris;
+    Tetris::Board tetris;
     auto *tetWin = CreateTetrisWin(1, 0);
 
     Time time;
     float dtAccum = 0.0f;
-    constexpr auto dt = 1.0f / 60.0f;
+    constexpr auto INTERVAL = 0.5f; // Game step interval
 
     time.Start();
     while (!tetris.GameOver())
     {
         dtAccum += time.Lap();
 
-        while (dtAccum >= dt)
+        // TODO: Get user input
+
+        while (dtAccum >= INTERVAL)
         {
             // TODO: Perform simulation step
-            dtAccum -= dt;
+            dtAccum -= INTERVAL;
         }
 
         mvprintw(0, 7, "%u", tetris.Score());

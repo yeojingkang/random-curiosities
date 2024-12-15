@@ -3,33 +3,44 @@
 #include <array>
 #include <ncurses.h>
 
-class Tetris
+#include "tetramino.h"
+
+namespace Tetris
 {
-public:
-    static constexpr int WIDTH = 10;
-    static constexpr int HEIGHT = 20;
-
-    Tetris();
-
-    void Step();
-    void PrintBoard(WINDOW *win) const;
-    bool GameOver() const;
-    unsigned Score() const;
-
-private:
-    using Tetramino = std::array<int, 4>;
-    static constexpr std::array<Tetramino, 7> tetraminoes = {
-        Tetramino{ 3,  4,  5,  6 }, // I
-        Tetramino{ 4,  5, 14, 15 }, // O
-        Tetramino{ 3, 13, 14, 15 }, // J
-        Tetramino{ 5, 13, 14, 15 }, // L
-        Tetramino{ 3,  4, 14, 15 }, // Z
-        Tetramino{ 4,  5, 13, 14 }, // S
-        Tetramino{ 4, 13, 14, 15 }  // T
+    struct PlayerTetra
+    {
+        TetraPiece piece;
+        int rotation;
+        int x, y;
     };
 
-    std::array<char, WIDTH * HEIGHT> board;
-    unsigned score = 0;
+    /*
+    * Contains everything needed for a Tetris board to function. It does not
+    * keep track of time to determine when to update its state. (This is done
+    * somewhere else)
+    */
+    class Board
+    {
+    public:
+        static constexpr auto WIDTH = 10;
+        static constexpr auto HEIGHT = 20;
 
-    void WipeBoard();
-};
+        Board();
+
+        void Step();
+        void PrintBoard(WINDOW *win) const;
+        bool GameOver() const;
+        unsigned Score() const;
+
+    private:
+        static constexpr auto BLOCK_CHAR = 'x';
+        static constexpr auto SPAWN_X = 3;
+        static constexpr auto SPAWN_Y = 0;
+
+        std::array<char, WIDTH * HEIGHT> board;
+        unsigned score;
+        PlayerTetra player;
+
+        void Wipe();
+    };
+}

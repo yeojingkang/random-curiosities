@@ -1,31 +1,44 @@
 #include "tetris.h"
 
-Tetris::Tetris()
+namespace Tetris
 {
-    WipeBoard(); // This is fine since default init for board does nothing
-}
+    Board::Board() :
+        score{ 0 },
+        player{TetraPiece::I, 0, SPAWN_X, SPAWN_Y }
+    {
+        Wipe(); // This is fine since default init for board does nothing
+    }
 
-void Tetris::Step()
-{
-    // TODO: Implement
-}
+    void Board::Step()
+    {
+        // TODO: Implement
+    }
 
-void Tetris::PrintBoard(WINDOW *win) const
-{
-    for (auto y = 0; y < HEIGHT; ++y)
-        for (auto x = 0; x < WIDTH; ++x)
-            mvwaddch(win, y + 1, x + 1, board[y * WIDTH + x]);
-}
+    void Board::PrintBoard(WINDOW *win) const
+    {
+        // Render board
+        for (auto y = 0; y < HEIGHT; ++y)
+            for (auto x = 0; x < WIDTH; ++x)
+                mvwaddch(win, y + 1, x + 1, board[y * WIDTH + x]);
 
-bool Tetris::GameOver() const
-{
-    // TODO: Implement
-    return false;
-}
+        // Render player tetramino
+        const auto &playerTetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
+        for (auto idx : playerTetra)
+        {
+            mvwaddch(win, player.y + idx.y + 1, player.x + idx.x + 1, BLOCK_CHAR);
+        }
+    }
 
-unsigned Tetris::Score() const { return score; }
+    bool Board::GameOver() const
+    {
+        // TODO: Implement
+        return false;
+    }
 
-inline void Tetris::WipeBoard()
-{
-    board.fill(' ');
+    unsigned Board::Score() const { return score; }
+
+    inline void Board::Wipe()
+    {
+        board.fill(' ');
+    }
 }
