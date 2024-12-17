@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <concepts>
 #include <ncurses.h>
 
 #include "tetramino.h"
@@ -11,7 +12,7 @@ namespace Tetris
     {
         TetraPiece piece;
         int rotation;
-        int x, y;
+        Pos pos;
     };
 
     /*
@@ -32,6 +33,9 @@ namespace Tetris
         bool GameOver() const;
         unsigned Score() const;
 
+        bool MovePlayer(Pos pos);
+        bool RotatePlayer(int rot);
+
     private:
         static constexpr auto BLOCK_CHAR = 'x';
         static constexpr auto SPAWN_X = 3;
@@ -42,5 +46,24 @@ namespace Tetris
         PlayerTetra player;
 
         void Wipe();
+
+        template<typename T>
+            requires std::same_as<std::remove_cvref_t<T>, PlayerTetra>
+        bool TryUpdatePlayer(T &&updatedPlayer)
+        {
+            auto collides = Collides(updatedPlayer);
+            if (!collides)
+            {
+                // Use move semantics where possible (i.e. non-const values)
+                if constexpr (std::is_const_v<std::remove_reference_t<T>>)
+                    player = std::forward<T>(updatedPlayer);
+                else
+                    std::swap(player, updatedPlayer);
+            }
+
+            return !collides;
+        }
+
+        bool Collides(const PlayerTetra &potentialPlayer) const;
     };
 }

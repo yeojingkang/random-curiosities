@@ -15,6 +15,8 @@ namespace Tetris
         int x, y;
     };
 
+    Pos operator+(const Pos &lhs, const Pos &rhs);
+
     using Tetramino = std::array<Pos, 4>;
     using TetraRot = std::array<Tetramino, 4>;
 

@@ -48,7 +48,7 @@ int main()
 
         while (dtAccum >= INTERVAL)
         {
-            // TODO: Perform simulation step
+            tetris.Step();
             dtAccum -= INTERVAL;
         }
 
