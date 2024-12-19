@@ -4,22 +4,23 @@
 
 namespace Tetris
 {
-    Pos operator+(const Pos &lhs, const Pos &rhs)
-    {
-        return Pos{ lhs.x + rhs.x, lhs.y + rhs.y };
-    }
-
     Board::Board() :
+        rng{ std::random_device{}() },
+        rngDistrib{ 0, static_cast<UniformDistribution::result_type>(TetraPiece::NUM_VALUES) - 1, },
         score{ 0 },
-        player{ TetraPiece::I, 0, SPAWN_X, SPAWN_Y }
+        player{ SpawnPiece() }
     {
         Wipe(); // This is fine since default init for board does nothing
     }
 
     void Board::Step()
     {
-        MovePlayer(Pos{ player.pos.x, player.pos.y + 1 });
-        // TODO: If cannot move player, lock in piece & do scoring, spawn next piece
+        if (!MovePlayer(Pos{ player.pos.x, player.pos.y + 1 }))
+        {
+            CommitPiece();
+            // TODO: Scoring
+            player = SpawnPiece();
+        }
     }
 
     void Board::PrintBoard(WINDOW *win) const
@@ -31,10 +32,8 @@ namespace Tetris
 
         // Render player tetramino
         const auto &playerTetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
-        for (auto idx : playerTetra)
-        {
-            mvwaddch(win, player.pos.y + idx.y + 1, player.pos.x + idx.x + 1, BLOCK_CHAR);
-        }
+        for (auto tilePos : playerTetra)
+            mvwaddch(win, player.pos.y + tilePos.y + 1, player.pos.x + tilePos.x + 1, BLOCK_CHAR);
     }
 
     bool Board::GameOver() const
@@ -75,6 +74,21 @@ namespace Tetris
     inline void Board::Wipe()
     {
         board.fill(' ');
+    }
+
+    void Board::CommitPiece()
+    {
+        const auto &tetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
+        for (auto tilePos : tetra)
+        {
+            const auto absPos = player.pos + tilePos;
+            board[absPos.y * WIDTH + absPos.x] = BLOCK_CHAR;
+        }
+    }
+
+    inline PlayerTetra Board::SpawnPiece()
+    {
+        return { static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
     }
 
     bool Board::Collides(const PlayerTetra &potentialPlayer) const

@@ -7,7 +7,8 @@ namespace Tetris
     enum class TetraPiece : int
     {
         I = 0,
-        O, J, L, Z, S, T
+        O, J, L, Z, S, T,
+        NUM_VALUES
     };
 
     struct Pos
@@ -15,7 +16,10 @@ namespace Tetris
         int x, y;
     };
 
-    Pos operator+(const Pos &lhs, const Pos &rhs);
+    inline Pos operator+(const Pos &lhs, const Pos &rhs)
+    {
+        return Pos{ lhs.x + rhs.x, lhs.y + rhs.y };
+    }
 
     using Tetramino = std::array<Pos, 4>;
     using TetraRot = std::array<Tetramino, 4>;

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <concepts>
+#include <random>
 #include <ncurses.h>
 
 #include "tetramino.h"
@@ -38,14 +39,21 @@ namespace Tetris
 
     private:
         static constexpr auto BLOCK_CHAR = 'x';
-        static constexpr auto SPAWN_X = 3;
-        static constexpr auto SPAWN_Y = 0;
+        static constexpr Pos SPAWN{ 3, 0 };
+
+        // TODO: Maybe move RNG stuffs to their own class/file
+        using RandNumGen = std::minstd_rand;
+        using UniformDistribution = std::uniform_int_distribution<RandNumGen::result_type>;
+        RandNumGen rng;
+        UniformDistribution rngDistrib;
 
         std::array<char, WIDTH * HEIGHT> board;
         unsigned score;
         PlayerTetra player;
 
         void Wipe();
+        void CommitPiece();
+        PlayerTetra SpawnPiece();
 
         template<typename T>
             requires std::same_as<std::remove_cvref_t<T>, PlayerTetra>
