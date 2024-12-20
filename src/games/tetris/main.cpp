@@ -44,14 +44,36 @@ int main()
     {
         dtAccum += time.Lap();
 
-        // TODO: Get user input
+        // Input
+        timeout(1); // Block and wait for input for 1ms
+        switch (getch())
+        {
+        case 'd':
+        case KEY_RIGHT:
+            tetris.MovePlayerRight();
+            break;
+        case 'a':
+        case KEY_LEFT:
+            tetris.MovePlayerLeft();
+            break;
+        case 's':
+        case KEY_DOWN:
+            tetris.MovePlayerDown();
+            break;
+        case 'w':
+        case KEY_UP:
+            tetris.RotatePlayerCW();
+            break;
+        }
 
+        // Logic
         while (dtAccum >= INTERVAL)
         {
             tetris.Step();
             dtAccum -= INTERVAL;
         }
 
+        // Render
         mvprintw(0, 7, "%u", tetris.Score());
         tetris.PrintBoard(tetWin);
 

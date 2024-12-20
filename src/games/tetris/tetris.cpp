@@ -44,6 +44,33 @@ namespace Tetris
 
     unsigned Board::Score() const { return score; }
 
+    void Board::MovePlayerLeft(int n) { MovePlayer({ player.pos.x - n, player.pos.y }); }
+    void Board::MovePlayerRight(int n) { MovePlayer({ player.pos.x + n, player.pos.y }); }
+    void Board::MovePlayerDown(int n) { MovePlayer({ player.pos.x, player.pos.y + n }); }
+
+    void Board::RotatePlayerCW() { RotatePlayer(player.rotation + 1); }
+    void Board::RotatePlayerCCW() { RotatePlayer(player.rotation - 1); }
+
+    inline void Board::Wipe()
+    {
+        board.fill(' ');
+    }
+
+    void Board::CommitPiece()
+    {
+        const auto &tetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
+        for (auto tilePos : tetra)
+        {
+            const auto absPos = player.pos + tilePos;
+            board[absPos.y * WIDTH + absPos.x] = BLOCK_CHAR;
+        }
+    }
+
+    inline PlayerTetra Board::SpawnPiece()
+    {
+        return { static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
+    }
+
     bool Board::MovePlayer(Pos pos)
     {
         auto updatedPlayer = player;
@@ -69,26 +96,6 @@ namespace Tetris
         */
 
         return TryUpdatePlayer(updatedPlayer);
-    }
-
-    inline void Board::Wipe()
-    {
-        board.fill(' ');
-    }
-
-    void Board::CommitPiece()
-    {
-        const auto &tetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
-        for (auto tilePos : tetra)
-        {
-            const auto absPos = player.pos + tilePos;
-            board[absPos.y * WIDTH + absPos.x] = BLOCK_CHAR;
-        }
-    }
-
-    inline PlayerTetra Board::SpawnPiece()
-    {
-        return { static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
     }
 
     bool Board::Collides(const PlayerTetra &potentialPlayer) const

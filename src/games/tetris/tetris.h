@@ -34,8 +34,12 @@ namespace Tetris
         bool GameOver() const;
         unsigned Score() const;
 
-        bool MovePlayer(Pos pos);
-        bool RotatePlayer(int rot);
+        void MovePlayerLeft(int n = 1);
+        void MovePlayerRight(int n = 1);
+        void MovePlayerDown(int n = 1);
+
+        void RotatePlayerCW();
+        void RotatePlayerCCW();
 
     private:
         static constexpr auto BLOCK_CHAR = 'x';
@@ -54,6 +58,9 @@ namespace Tetris
         void Wipe();
         void CommitPiece();
         PlayerTetra SpawnPiece();
+
+        bool MovePlayer(Pos pos);
+        bool RotatePlayer(int rot);
 
         template<typename T>
             requires std::same_as<std::remove_cvref_t<T>, PlayerTetra>
