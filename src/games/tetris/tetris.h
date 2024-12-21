@@ -42,8 +42,16 @@ namespace Tetris
         void RotatePlayerCCW();
 
     private:
+        using Row = std::array<char, WIDTH>;
+
         static constexpr auto BLOCK_CHAR = 'x';
         static constexpr Pos SPAWN{ 3, 0 };
+        static constexpr auto FULL_ROW = []
+        {
+            Row row;
+            row.fill(BLOCK_CHAR);
+            return row;
+        }();
 
         // TODO: Maybe move RNG stuffs to their own class/file
         using RandNumGen = std::minstd_rand;
@@ -51,13 +59,14 @@ namespace Tetris
         RandNumGen rng;
         UniformDistribution rngDistrib;
 
-        std::array<char, WIDTH * HEIGHT> board;
+        std::array<Row, HEIGHT> board;
         unsigned score;
         PlayerTetra player;
 
         void Wipe();
         void CommitPiece();
         PlayerTetra SpawnPiece();
+        void PerformScoring();
 
         bool MovePlayer(Pos pos);
         bool RotatePlayer(int rot);

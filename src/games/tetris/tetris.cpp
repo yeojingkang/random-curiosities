@@ -18,7 +18,7 @@ namespace Tetris
         if (!MovePlayer(Pos{ player.pos.x, player.pos.y + 1 }))
         {
             CommitPiece();
-            // TODO: Scoring
+            PerformScoring();
             player = SpawnPiece();
         }
     }
@@ -28,7 +28,7 @@ namespace Tetris
         // Render board
         for (auto y = 0; y < HEIGHT; ++y)
             for (auto x = 0; x < WIDTH; ++x)
-                mvwaddch(win, y + 1, x + 1, board[y * WIDTH + x]);
+                mvwaddch(win, y + 1, x + 1, board[y][x]);
 
         // Render player tetramino
         const auto &playerTetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
@@ -48,12 +48,13 @@ namespace Tetris
     void Board::MovePlayerRight(int n) { MovePlayer({ player.pos.x + n, player.pos.y }); }
     void Board::MovePlayerDown(int n) { MovePlayer({ player.pos.x, player.pos.y + n }); }
 
-    void Board::RotatePlayerCW() { RotatePlayer(player.rotation + 1); }
-    void Board::RotatePlayerCCW() { RotatePlayer(player.rotation - 1); }
+    void Board::RotatePlayerCW() { RotatePlayer((player.rotation + 1) % 4); }
+    void Board::RotatePlayerCCW() { RotatePlayer((player.rotation - 1 + 4) % 4); }
 
     inline void Board::Wipe()
     {
-        board.fill(' ');
+        for (auto &row : board)
+            row.fill(' ');
     }
 
     void Board::CommitPiece()
@@ -62,13 +63,29 @@ namespace Tetris
         for (auto tilePos : tetra)
         {
             const auto absPos = player.pos + tilePos;
-            board[absPos.y * WIDTH + absPos.x] = BLOCK_CHAR;
+            board[absPos.y][absPos.x] = BLOCK_CHAR;
         }
     }
 
     inline PlayerTetra Board::SpawnPiece()
     {
         return { static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
+    }
+
+    void Board::PerformScoring()
+    {
+        for (auto i = player.pos.y + 3; i >= player.pos.y; --i)
+        {
+            if (board[i] != FULL_ROW)
+                continue;
+
+            board[i].fill(' ');
+            const auto rowIt = std::begin(board) + i;
+            // TODO: Maybe multiple filled rows can be batch-rotated?
+            std::rotate(std::begin(board), rowIt, rowIt + 1);
+            ++i; // Stay on this row since rows above have shifted down
+            ++score;
+        }
     }
 
     bool Board::MovePlayer(Pos pos)
@@ -109,7 +126,7 @@ namespace Tetris
 
                 return absPos.x < 0 || absPos.x >= WIDTH
                     || absPos.y < 0 || absPos.y >= HEIGHT
-                    || board[absPos.y * WIDTH + absPos.x] == BLOCK_CHAR;
+                    || board[absPos.y][absPos.x] == BLOCK_CHAR;
             });
     }
 }
