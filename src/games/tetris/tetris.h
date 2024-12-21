@@ -62,6 +62,7 @@ namespace Tetris
         std::array<Row, HEIGHT> board;
         unsigned score;
         PlayerTetra player;
+        bool gameOver;
 
         void Wipe();
         void CommitPiece();

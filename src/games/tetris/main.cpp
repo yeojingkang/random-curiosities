@@ -19,6 +19,14 @@ WINDOW *CreateTetrisWin(int starty, int startx)
     return win;
 }
 
+WINDOW *CreateGameOverWin(int starty, int startx)
+{
+    auto *win = newwin(3, 14, starty, startx);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 2, "Game Over!");
+    return win;
+}
+
 void DestroyWin(WINDOW *win)
 {
     wborder(win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '); // Clear all borders
@@ -34,13 +42,16 @@ int main()
 
     Tetris::Board tetris;
     auto *tetWin = CreateTetrisWin(1, 0);
+    auto *gameOverWin = CreateGameOverWin(11, 5);
+
+    bool gameOpen = true;
 
     Time time;
     float dtAccum = 0.0f;
     constexpr auto INTERVAL = 0.5f; // Game step interval
 
     time.Start();
-    while (!tetris.GameOver())
+    while (gameOpen)
     {
         dtAccum += time.Lap();
 
@@ -78,7 +89,10 @@ int main()
         tetris.PrintBoard(tetWin);
 
         refresh();
-        wrefresh(tetWin);
+        if (tetris.GameOver())
+            wrefresh(gameOverWin);
+        else
+            wrefresh(tetWin);
     }
 
     DestroyWin(tetWin);

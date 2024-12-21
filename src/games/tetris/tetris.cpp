@@ -8,18 +8,25 @@ namespace Tetris
         rng{ std::random_device{}() },
         rngDistrib{ 0, static_cast<UniformDistribution::result_type>(TetraPiece::NUM_VALUES) - 1, },
         score{ 0 },
-        player{ SpawnPiece() }
+        player{ SpawnPiece() },
+        gameOver{ false }
     {
         Wipe(); // This is fine since default init for board does nothing
     }
 
     void Board::Step()
     {
+        if (gameOver)
+            return;
+
         if (!MovePlayer(Pos{ player.pos.x, player.pos.y + 1 }))
         {
             CommitPiece();
             PerformScoring();
             player = SpawnPiece();
+
+            if (Collides(player))
+                gameOver = true;
         }
     }
 
@@ -36,12 +43,7 @@ namespace Tetris
             mvwaddch(win, player.pos.y + tilePos.y + 1, player.pos.x + tilePos.x + 1, BLOCK_CHAR);
     }
 
-    bool Board::GameOver() const
-    {
-        // TODO: Implement
-        return false;
-    }
-
+    bool Board::GameOver() const { return gameOver; }
     unsigned Board::Score() const { return score; }
 
     void Board::MovePlayerLeft(int n) { MovePlayer({ player.pos.x - n, player.pos.y }); }
