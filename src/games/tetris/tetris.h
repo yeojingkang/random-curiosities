@@ -72,23 +72,7 @@ namespace Tetris
         bool MovePlayer(Pos pos);
         bool RotatePlayer(int rot);
 
-        template<typename T>
-            requires std::same_as<std::remove_cvref_t<T>, PlayerTetra>
-        bool TryUpdatePlayer(T &&updatedPlayer)
-        {
-            auto collides = Collides(updatedPlayer);
-            if (!collides)
-            {
-                // Use move semantics where possible (i.e. non-const values)
-                if constexpr (std::is_const_v<std::remove_reference_t<T>>)
-                    player = std::forward<T>(updatedPlayer);
-                else
-                    std::swap(player, updatedPlayer);
-            }
-
-            return !collides;
-        }
-
+        bool TryUpdatePlayer(const PlayerTetra &updatedPlayer);
         bool Collides(const PlayerTetra &potentialPlayer) const;
     };
 }

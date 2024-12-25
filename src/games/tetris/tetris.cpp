@@ -103,18 +103,16 @@ namespace Tetris
         auto updatedPlayer = player;
         updatedPlayer.rotation = rot;
 
-        /*
-         * NOTE: This is just a demonstration to show that TryUpdatePlayer
-         *       supports const/non-const lvalue/rvalue
-         */
-        /*
-        const auto f = updatedPlayer;
-        TryUpdatePlayer(f);
-        TryUpdatePlayer(std::move(f));
-        TryUpdatePlayer(PlayerTetra{ TetraPiece::I, 0, SPAWN_X, SPAWN_Y });
-        */
-
         return TryUpdatePlayer(updatedPlayer);
+    }
+
+    bool Board::TryUpdatePlayer(const PlayerTetra &updatedPlayer)
+    {
+        const auto collides = Collides(updatedPlayer);
+        if (!collides)
+            player = updatedPlayer;
+
+        return !collides;
     }
 
     bool Board::Collides(const PlayerTetra &potentialPlayer) const
