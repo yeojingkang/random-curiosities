@@ -25,7 +25,7 @@ namespace Tetris
     using TetraRot = std::array<Tetramino, 4>;
 
     // The complete list of every piece's rotations
-    constexpr std::array<TetraRot, 7> TETRAMINOES = {
+    inline constexpr std::array<TetraRot, 7> TETRAMINOES = {
         TetraRot{ // I
             Tetramino{ Pos{ 0, 1 }, Pos{ 1, 1 }, Pos{ 2, 1 }, Pos{ 3, 1 } },
             Tetramino{ Pos{ 2, 0 }, Pos{ 2, 1 }, Pos{ 2, 2 }, Pos{ 2, 3 } },

@@ -4,6 +4,38 @@
 
 namespace Tetris
 {
+    inline constexpr auto BLOCK_CHAR = 'x';
+    inline constexpr Pos SPAWN{ 3, 0 };
+    inline constexpr auto FULL_ROW = []
+    {
+        Row row;
+        row.fill(BLOCK_CHAR);
+        return row;
+    }();
+
+    bool Collides(const Board &board, const PlayerTetra &playerTetra)
+    {
+        const auto &tetra = TETRAMINOES[static_cast<int>(playerTetra.piece)][playerTetra.rotation];
+
+        return std::any_of(std::begin(tetra), std::end(tetra),
+            [&board, &playerTetra](const auto &tilePos)
+            {
+                const auto absPos = playerTetra.pos + tilePos;
+
+                return absPos.x < 0 || absPos.x >= WIDTH
+                    || absPos.y < 0 || absPos.y >= HEIGHT
+                    || board[absPos.y][absPos.x] == BLOCK_CHAR;
+            });
+    }
+
+    int CalcGhostY(const Board &board, PlayerTetra tetra)
+    {
+        while (!Collides(board, tetra))
+            ++tetra.pos.y;
+
+        return tetra.pos.y - 1;
+    }
+
     Instance::Instance() :
         rng{ std::random_device{}() },
         rngDistrib{ 0, static_cast<UniformDistribution::result_type>(TetraPiece::NUM_VALUES) - 1 },
@@ -25,7 +57,7 @@ namespace Tetris
             PerformScoring();
             player = SpawnPiece();
 
-            if (Collides(player))
+            if (Collides(board, player))
                 gameOver = true;
         }
     }
@@ -79,7 +111,7 @@ namespace Tetris
     inline PlayerTetra Instance::SpawnPiece()
     {
         auto newPiece = PlayerTetra{ static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
-        ghostY = CalcGhostY(newPiece);
+        ghostY = CalcGhostY(board, newPiece);
         return newPiece;
     }
 
@@ -115,43 +147,17 @@ namespace Tetris
         return TryUpdatePlayer(updatedPlayer);
     }
 
-    int Instance::CalcGhostY(PlayerTetra tetra) const
-    {
-        // Rare do-while loop?
-        do
-        {
-            ++tetra.pos.y;
-        } while (!Collides(tetra));
-
-        return tetra.pos.y - 1;
-    }
-
     bool Instance::TryUpdatePlayer(const PlayerTetra &updatedPlayer)
     {
-        const auto collides = Collides(updatedPlayer);
+        const auto collides = Collides(board, updatedPlayer);
         if (!collides)
         {
             if (player.pos.x != updatedPlayer.pos.x ||
                 player.rotation != updatedPlayer.rotation)
-                ghostY = CalcGhostY(updatedPlayer);
+                ghostY = CalcGhostY(board, updatedPlayer);
             player = updatedPlayer;
         }
 
         return !collides;
-    }
-
-    bool Instance::Collides(const PlayerTetra &potentialPlayer) const
-    {
-        const auto &tetra = TETRAMINOES[static_cast<int>(potentialPlayer.piece)][potentialPlayer.rotation];
-
-        return std::any_of(std::begin(tetra), std::end(tetra),
-            [this, &potentialPlayer](const auto &tilePos)
-            {
-                const auto absPos = potentialPlayer.pos + tilePos;
-
-                return absPos.x < 0 || absPos.x >= WIDTH
-                    || absPos.y < 0 || absPos.y >= HEIGHT
-                    || board[absPos.y][absPos.x] == BLOCK_CHAR;
-            });
     }
 }

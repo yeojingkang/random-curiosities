@@ -9,6 +9,12 @@
 
 namespace Tetris
 {
+    inline constexpr auto WIDTH = 10;
+    inline constexpr auto HEIGHT = 20;
+
+    using Row = std::array<char, WIDTH>;
+    using Board = std::array<Row, HEIGHT>;
+
     struct PlayerTetra
     {
         TetraPiece piece;
@@ -17,18 +23,13 @@ namespace Tetris
     };
 
     /*
-    * Contains everything needed for a Tetris board to function. It does not
-    * keep track of time to determine when to update its state. (This is done
-    * somewhere else)
-    */
+     * Contains everything needed for a Tetris board to function. It does not
+     * keep track of time to determine when to update its state. (This is done
+     * somewhere else)
+     */
     class Instance
     {
     public:
-        static constexpr auto WIDTH = 10;
-        static constexpr auto HEIGHT = 20;
-
-        using Row = std::array<char, WIDTH>;
-        using Board = std::array<Row, HEIGHT>;
 
         Instance();
 
@@ -45,15 +46,6 @@ namespace Tetris
         void RotatePlayerCCW();
 
     private:
-        static constexpr auto BLOCK_CHAR = 'x';
-        static constexpr Pos SPAWN{ 3, 0 };
-        static constexpr auto FULL_ROW = []
-        {
-            Row row;
-            row.fill(BLOCK_CHAR);
-            return row;
-        }();
-
         // TODO: Maybe move RNG stuffs to their own class/file
         using RandNumGen = std::minstd_rand;
         using UniformDistribution = std::uniform_int_distribution<RandNumGen::result_type>;
@@ -75,9 +67,7 @@ namespace Tetris
 
         bool MovePlayer(Pos pos);
         bool RotatePlayer(int rot);
-        int CalcGhostY(PlayerTetra tetra) const;
 
         bool TryUpdatePlayer(const PlayerTetra &updatedPlayer);
-        bool Collides(const PlayerTetra &potentialPlayer) const;
     };
 }
