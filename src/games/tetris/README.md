@@ -32,9 +32,9 @@ constexpr std::array<TetraRot, 7> TETRAMINOES = {
 ```
 
 ## The player and the board
-A naive way to implement the player and the board is to put the player's tetramino in the board and move it as necessary. One problem with this approach is that it's unclear which tiles on the board belong to the player, and the board's tiles might accidentally be moved.
+A naive way to implement the player and the board is to put the player's tetramino in the board and move it as necessary. One problem with this approach is that it's unclear which tiles on the board belong to the player, and movement + collision check becomes unnecessarily complex. For example, if we want to move the vertical I piece down 1 tile, we must first check the new position for collision, which would require keeping track of the player's tiles on the board.
 
-Instead, we can think of the player and the board as separate entities on different layers, like a magnet and a fridge. The player "hovers" in front of the board, and is only added to the board if it can't drop any further.
+Instead, we can separate the player and the board into different layers. The player "hovers" in front of the board (whilst respecting collision rules), and is only added to the board if it can't drop any further.
 
 ### Collision
 This is a trivial matter of checking each player tile against the board for overlaps.
@@ -42,7 +42,7 @@ This is a trivial matter of checking each player tile against the board for over
 ## Board rows
 My initial implementation of the board was a single array of chars, and the rows/columns were managed arithmetically. This made row management unnecessarily complex, especially row shifting. I'd have to manually `memcpy` elements down the array, making sure not to overwrite data that weren't moved yet.
 
-I then changed my implementation to an `std::array` of rows (each an `std::array` of chars). Coupled with `std::rotate`, this made row clearing and shifting simple. I still have to measure the performance of this approach.
+I then changed my implementation to an `std::array` of rows (each an `std::array` of chars). Coupled with `std::rotate`, this made line clearing and shifting simple. I still have to measure the performance of this approach.
 
 ## TODO
 - Check if manual management of board through single array is more performant

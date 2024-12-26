@@ -4,9 +4,9 @@
 
 namespace Tetris
 {
-    Board::Board() :
+    Instance::Instance() :
         rng{ std::random_device{}() },
-        rngDistrib{ 0, static_cast<UniformDistribution::result_type>(TetraPiece::NUM_VALUES) - 1, },
+        rngDistrib{ 0, static_cast<UniformDistribution::result_type>(TetraPiece::NUM_VALUES) - 1 },
         score{ 0 },
         player{ SpawnPiece() },
         gameOver{ false }
@@ -14,7 +14,7 @@ namespace Tetris
         Wipe(); // This is fine since default init for board does nothing
     }
 
-    void Board::Step()
+    void Instance::Step()
     {
         if (gameOver)
             return;
@@ -30,36 +30,43 @@ namespace Tetris
         }
     }
 
-    void Board::PrintBoard(WINDOW *win) const
+    void Instance::PrintBoard(WINDOW *win) const
     {
         // Render board
         for (auto y = 0; y < HEIGHT; ++y)
             for (auto x = 0; x < WIDTH; ++x)
                 mvwaddch(win, y + 1, x + 1, board[y][x]);
 
-        // Render player tetramino
         const auto &playerTetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
+
+        // Render ghost
+        wattrset(win, A_DIM);
+        for (auto tilePos : playerTetra)
+            mvwaddch(win, ghostY + tilePos.y + 1, player.pos.x + tilePos.x + 1, BLOCK_CHAR);
+        wstandend(win);
+
+        // Render player tetramino
         for (auto tilePos : playerTetra)
             mvwaddch(win, player.pos.y + tilePos.y + 1, player.pos.x + tilePos.x + 1, BLOCK_CHAR);
     }
 
-    bool Board::GameOver() const { return gameOver; }
-    unsigned Board::Score() const { return score; }
+    bool Instance::GameOver() const { return gameOver; }
+    unsigned Instance::Score() const { return score; }
 
-    void Board::MovePlayerLeft(int n) { MovePlayer({ player.pos.x - n, player.pos.y }); }
-    void Board::MovePlayerRight(int n) { MovePlayer({ player.pos.x + n, player.pos.y }); }
-    void Board::MovePlayerDown(int n) { MovePlayer({ player.pos.x, player.pos.y + n }); }
+    void Instance::MovePlayerLeft(int n) { MovePlayer({ player.pos.x - n, player.pos.y }); }
+    void Instance::MovePlayerRight(int n) { MovePlayer({ player.pos.x + n, player.pos.y }); }
+    void Instance::MovePlayerDown(int n) { MovePlayer({ player.pos.x, player.pos.y + n }); }
 
-    void Board::RotatePlayerCW() { RotatePlayer((player.rotation + 1) % 4); }
-    void Board::RotatePlayerCCW() { RotatePlayer((player.rotation - 1 + 4) % 4); }
+    void Instance::RotatePlayerCW() { RotatePlayer((player.rotation + 1) % 4); }
+    void Instance::RotatePlayerCCW() { RotatePlayer((player.rotation - 1 + 4) % 4); }
 
-    inline void Board::Wipe()
+    inline void Instance::Wipe()
     {
         for (auto &row : board)
             row.fill(' ');
     }
 
-    void Board::CommitPiece()
+    void Instance::CommitPiece()
     {
         const auto &tetra = TETRAMINOES[static_cast<int>(player.piece)][player.rotation];
         for (auto tilePos : tetra)
@@ -69,12 +76,14 @@ namespace Tetris
         }
     }
 
-    inline PlayerTetra Board::SpawnPiece()
+    inline PlayerTetra Instance::SpawnPiece()
     {
-        return { static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
+        auto newPiece = PlayerTetra{ static_cast<TetraPiece>(rngDistrib(rng)), 0, SPAWN };
+        ghostY = CalcGhostY(newPiece);
+        return newPiece;
     }
 
-    void Board::PerformScoring()
+    void Instance::PerformScoring()
     {
         for (auto i = player.pos.y + 3; i >= player.pos.y; --i)
         {
@@ -90,7 +99,7 @@ namespace Tetris
         }
     }
 
-    bool Board::MovePlayer(Pos pos)
+    bool Instance::MovePlayer(Pos pos)
     {
         auto updatedPlayer = player;
         updatedPlayer.pos = pos;
@@ -98,7 +107,7 @@ namespace Tetris
         return TryUpdatePlayer(updatedPlayer);
     }
 
-    bool Board::RotatePlayer(int rot)
+    bool Instance::RotatePlayer(int rot)
     {
         auto updatedPlayer = player;
         updatedPlayer.rotation = rot;
@@ -106,16 +115,32 @@ namespace Tetris
         return TryUpdatePlayer(updatedPlayer);
     }
 
-    bool Board::TryUpdatePlayer(const PlayerTetra &updatedPlayer)
+    int Instance::CalcGhostY(PlayerTetra tetra) const
+    {
+        // Rare do-while loop?
+        do
+        {
+            ++tetra.pos.y;
+        } while (!Collides(tetra));
+
+        return tetra.pos.y - 1;
+    }
+
+    bool Instance::TryUpdatePlayer(const PlayerTetra &updatedPlayer)
     {
         const auto collides = Collides(updatedPlayer);
         if (!collides)
+        {
+            if (player.pos.x != updatedPlayer.pos.x ||
+                player.rotation != updatedPlayer.rotation)
+                ghostY = CalcGhostY(updatedPlayer);
             player = updatedPlayer;
+        }
 
         return !collides;
     }
 
-    bool Board::Collides(const PlayerTetra &potentialPlayer) const
+    bool Instance::Collides(const PlayerTetra &potentialPlayer) const
     {
         const auto &tetra = TETRAMINOES[static_cast<int>(potentialPlayer.piece)][potentialPlayer.rotation];
 

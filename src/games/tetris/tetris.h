@@ -21,13 +21,16 @@ namespace Tetris
     * keep track of time to determine when to update its state. (This is done
     * somewhere else)
     */
-    class Board
+    class Instance
     {
     public:
         static constexpr auto WIDTH = 10;
         static constexpr auto HEIGHT = 20;
 
-        Board();
+        using Row = std::array<char, WIDTH>;
+        using Board = std::array<Row, HEIGHT>;
+
+        Instance();
 
         void Step();
         void PrintBoard(WINDOW *win) const;
@@ -42,8 +45,6 @@ namespace Tetris
         void RotatePlayerCCW();
 
     private:
-        using Row = std::array<char, WIDTH>;
-
         static constexpr auto BLOCK_CHAR = 'x';
         static constexpr Pos SPAWN{ 3, 0 };
         static constexpr auto FULL_ROW = []
@@ -59,11 +60,14 @@ namespace Tetris
         RandNumGen rng;
         UniformDistribution rngDistrib;
 
-        std::array<Row, HEIGHT> board;
+        Board board;
         unsigned score;
         PlayerTetra player;
+        int ghostY;
+
         bool gameOver;
 
+        // TODO: Convert functions here to free functions if possible
         void Wipe();
         void CommitPiece();
         PlayerTetra SpawnPiece();
@@ -71,6 +75,7 @@ namespace Tetris
 
         bool MovePlayer(Pos pos);
         bool RotatePlayer(int rot);
+        int CalcGhostY(PlayerTetra tetra) const;
 
         bool TryUpdatePlayer(const PlayerTetra &updatedPlayer);
         bool Collides(const PlayerTetra &potentialPlayer) const;

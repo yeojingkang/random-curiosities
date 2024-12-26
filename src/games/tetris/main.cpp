@@ -14,7 +14,7 @@ void InitNCurses()
 
 WINDOW *CreateTetrisWin(int starty, int startx)
 {
-    auto *win = newwin(Tetris::Board::HEIGHT + 2, Tetris::Board::WIDTH + 2, starty, startx);
+    auto *win = newwin(Tetris::Instance::HEIGHT + 2, Tetris::Instance::WIDTH + 2, starty, startx);
     box(win, 0, 0); // Use default chars for vertical & horizontal lines
     return win;
 }
@@ -40,7 +40,7 @@ int main()
 
     mvprintw(0, 0, "Score: ");
 
-    Tetris::Board tetris;
+    Tetris::Instance tetris;
     auto *tetWin = CreateTetrisWin(1, 0);
     auto *gameOverWin = CreateGameOverWin(11, 5);
 
