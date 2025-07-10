@@ -14,7 +14,7 @@ namespace Regex
 
         for (const auto c : input)
         {
-            currStates = NFA::Move(currStates, c);
+            currStates = NFA::EpsilonClosure(NFA::Move(currStates, c));
             if (currStates.empty())
                 return false;
         }
@@ -35,7 +35,7 @@ namespace Regex
         {
             ++pos;
             auto rUnion = ParseConcat();
-            result = NFA::MakeUnion(result, rUnion);
+            result = NFA::MakeUnion(std::move(result), std::move(rUnion));
         }
 
         return result;
@@ -46,9 +46,8 @@ namespace Regex
         auto result = ParseStar();
         while (!IsAtEnd() && Peek() != '|' && Peek() != ')')
         {
-            ++pos;
             auto concatNFA = ParseStar();
-            result = NFA::MakeConcat(result, concatNFA);
+            result = NFA::MakeConcat(std::move(result), std::move(concatNFA));
         }
 
         return result;
@@ -60,7 +59,7 @@ namespace Regex
         while (!IsAtEnd() && Peek() == '*')
         {
             ++pos;
-            result = NFA::MakeKleeneStar(result);
+            result = NFA::MakeKleeneStar(std::move(result));
         }
 
         return result;
@@ -68,7 +67,7 @@ namespace Regex
 
     NFA Engine::ParseAtom()
     {
-        if (pos > static_cast<int>(pattern.length()))
+        if (IsAtEnd())
             return NFA::MakeEpsilon();
 
         const auto currChar = Advance();
@@ -77,7 +76,7 @@ namespace Regex
             return NFA::MakeChar(currChar); // Read single char
 
         // Capture group
-        const auto result = ParseExpr();
+        auto result = ParseExpr();
 
         if (!IsAtEnd() && Peek() == ')')
             ++pos;
@@ -89,5 +88,5 @@ namespace Regex
 
     char Engine::Advance() { return pattern[pos++]; }
     char Engine::Peek() const { return pattern[pos]; }
-    bool Engine::IsAtEnd() const { return pos < static_cast<int>(pattern.length()); }
+    bool Engine::IsAtEnd() const { return pos >= static_cast<int>(pattern.length()); }
 }

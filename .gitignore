@@ -35,3 +35,5 @@ src/primes/prime-in-irrat
 src/data-structs/rb-tree
 
 src/games/tetris/tetris
+
+src/regex/regex

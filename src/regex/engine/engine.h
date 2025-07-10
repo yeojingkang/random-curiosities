@@ -16,7 +16,7 @@ namespace Regex
         bool Matches(std::string_view input);
 
     private:
-        const std::string pattern;
+        std::string pattern;
         int pos;
         NFA nfa;
 
