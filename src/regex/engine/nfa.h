@@ -24,14 +24,13 @@ namespace Regex
     {
     public:
         NFA();
-        
+
+        // NFAs cannot be copied
         NFA(const NFA&) = delete;
-        NFA(NFA&&) = default;
-
         NFA& operator=(const NFA&) = delete;
-        NFA& operator=(NFA&&) = default;
 
-        void AcquireStatesFrom(NFA &other);
+        NFA(NFA&&) = default;
+        NFA& operator=(NFA&&) = default;
 
         static NFA MakeEpsilon();
         static NFA MakeChar(char c);
@@ -49,5 +48,7 @@ namespace Regex
 
     private:
         std::vector<std::unique_ptr<State>> states;
+
+        void AcquireStatesFrom(NFA &other);
     };
 }

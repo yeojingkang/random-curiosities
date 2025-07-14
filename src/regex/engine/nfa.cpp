@@ -58,10 +58,17 @@ namespace Regex
     NFA NFA::MakeConcat(NFA &&nfa1, NFA &&nfa2)
     {
         NFA nfa;
-        nfa1.acceptingState->transitions.emplace_back(EPSILON_CHAR, nfa2.startState);
+        for (const auto &t : nfa2.startState->transitions)
+            nfa1.acceptingState->transitions.emplace_back(t);
         nfa1.acceptingState->isAccepting = false;
+
         nfa.startState = nfa1.startState;
         nfa.acceptingState = nfa2.acceptingState;
+
+        nfa.states.clear();
+        // HACK: Start state should be the first element
+        nfa2.states.erase(std::begin(nfa2.states)); // Also, performance...
+
         nfa.AcquireStatesFrom(nfa1);
         nfa.AcquireStatesFrom(nfa2);
         return nfa;
