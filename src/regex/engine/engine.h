@@ -24,6 +24,7 @@ namespace Regex
         NFA ParseUnion();
         NFA ParseConcat();
         NFA ParseStar();
+        NFA ParsePlus();
         NFA ParseAtom();
 
         char Advance();

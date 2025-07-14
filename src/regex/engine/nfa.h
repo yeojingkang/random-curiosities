@@ -37,6 +37,7 @@ namespace Regex
         static NFA MakeUnion(NFA &&nfa1, NFA &&nfa2);
         static NFA MakeConcat(NFA &&nfa1, NFA &&nfa2);
         static NFA MakeKleeneStar(NFA &&nfa);
+        static NFA MakePlus(NFA &&nfa);
 
         static std::set<State *> EpsilonClosure(const std::set<State *> &states);
         static std::set<State *> Move(const std::set<State *> &states, char c);
@@ -50,5 +51,6 @@ namespace Regex
         std::vector<std::unique_ptr<State>> states;
 
         void AcquireStatesFrom(NFA &other);
+        static NFA CopyNFA(const NFA &src);
     };
 }

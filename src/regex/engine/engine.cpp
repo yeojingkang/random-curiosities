@@ -55,11 +55,23 @@ namespace Regex
 
     NFA Engine::ParseStar()
     {
-        auto result = ParseAtom();
+        auto result = ParsePlus();
         while (!IsAtEnd() && Peek() == '*')
         {
             ++pos;
             result = NFA::MakeKleeneStar(std::move(result));
+        }
+
+        return result;
+    }
+
+    NFA Engine::ParsePlus()
+    {
+        auto result = ParseAtom();
+        while (!IsAtEnd() && Peek() == '+')
+        {
+            ++pos;
+            result = NFA::MakePlus(std::move(result));
         }
 
         return result;

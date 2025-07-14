@@ -3,10 +3,60 @@
 #include <stack>
 #include <ranges>
 #include <iostream>
+#include <unordered_map>
+#include <algorithm>
 
 namespace Regex
 {
     constexpr auto EPSILON_CHAR = '\0';
+
+    NFA NFA::CopyNFA(const NFA &src)
+    {
+        NFA cpy;
+
+        std::unordered_map<State *, State *> srcToCpy
+        {
+            {src.startState, cpy.startState},
+            {src.acceptingState, cpy.acceptingState},
+        };
+
+        std::stack<State *> currStack;
+        currStack.push(src.startState);
+
+        while (!currStack.empty())
+        {
+            const auto srcFrom = currStack.top();
+            currStack.pop();
+            const auto cpyFrom = srcToCpy[srcFrom];
+
+            for (const auto &[c, to]: srcFrom->transitions)
+            {
+                if (!srcToCpy.contains(to))
+                {
+                    // Transition node is not copied yet
+                    auto cpyTo = std::make_unique<State>(to->isAccepting);
+                    const auto cpyToPtr = cpyTo.get();
+
+                    cpy.states.emplace_back(std::move(cpyTo));
+                    cpyFrom->transitions.emplace_back(c, cpyToPtr);
+
+                    srcToCpy[to] = cpyToPtr;
+                    currStack.emplace(to);
+                }
+                else
+                {
+                    const auto cpyTo = srcToCpy[to];
+                    auto cpyTransition = Transition{c, cpyTo};
+                    if (std::find(std::cbegin(cpyFrom->transitions), std::cend(cpyFrom->transitions), cpyTransition) == std::cend(cpyFrom->transitions))
+                    {
+                        cpyFrom->transitions.emplace_back(std::move(cpyTransition));
+                    }
+                }
+            }
+        }
+
+        return cpy;
+    }
 
     NFA::NFA()
     {
@@ -84,6 +134,12 @@ namespace Regex
         nfa.acceptingState->isAccepting = false;
         newNFA.AcquireStatesFrom(nfa);
         return newNFA;
+    }
+
+    NFA NFA::MakePlus(NFA &&nfa)
+    {
+        auto cpy = CopyNFA(nfa);
+        return MakeConcat(std::move(cpy), MakeKleeneStar(std::move(nfa)));
     }
 
     std::set<State *> NFA::EpsilonClosure(const std::set<State *> &states)
