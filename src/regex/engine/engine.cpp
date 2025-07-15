@@ -1,11 +1,15 @@
 #include "engine.h"
 
+#include <regex>
+#include <iostream>
+
 namespace Regex
 {
     void Engine::Compile()
     {
         pos = 0;
         nfa = ParseExpr();
+        nfa.Print();
     }
 
     bool Engine::Matches(std::string_view input)
@@ -43,35 +47,32 @@ namespace Regex
 
     NFA Engine::ParseConcat()
     {
-        auto result = ParseStar();
+        auto result = ParseDuplication();
         while (!IsAtEnd() && Peek() != '|' && Peek() != ')')
         {
-            auto concatNFA = ParseStar();
+            auto concatNFA = ParseDuplication();
             result = NFA::MakeConcat(std::move(result), std::move(concatNFA));
         }
 
         return result;
     }
 
-    NFA Engine::ParseStar()
-    {
-        auto result = ParsePlus();
-        while (!IsAtEnd() && Peek() == '*')
-        {
-            ++pos;
-            result = NFA::MakeKleeneStar(std::move(result));
-        }
-
-        return result;
-    }
-
-    NFA Engine::ParsePlus()
+    NFA Engine::ParseDuplication()
     {
         auto result = ParseAtom();
-        while (!IsAtEnd() && Peek() == '+')
+        while (!IsAtEnd())
         {
+            const auto c = Peek();
+            const auto makeNFA =
+                c == '*' ? NFA::MakeKleeneStar :
+                c == '+' ? NFA::MakePlus :
+                nullptr;
+
+            if (makeNFA == nullptr)
+                break;
+
             ++pos;
-            result = NFA::MakePlus(std::move(result));
+            result = makeNFA(std::move(result));
         }
 
         return result;
@@ -93,7 +94,7 @@ namespace Regex
         if (!IsAtEnd() && Peek() == ')')
             ++pos;
         else
-            throw; // TODO: Throw something proper
+            throw std::regex_error{std::regex_constants::error_paren}; // TODO: Throw something proper
 
         return result;
     }
