@@ -1,212 +1,56 @@
 #pragma once
-#include <cstdlib>
-#include <iostream>
-#include <cstring>
-#include <iomanip>
 
-namespace CS170
+#include <cstddef>
+#include <memory>
+#include <iterator>
+
+namespace mystl
 {
-    template<typename T>
-    class Vector
+    template<
+        typename T,
+        typename Allocator = std::allocator<T>
+    > class vector
     {
+    private:
+        using alloc_traits = std::allocator_traits<Allocator>;
+
     public:
-        Vector() :
-            _data{nullptr},
-            _size{0},
-            _capacity{0},
-            _alloc_count{0}
+        using value_type = T;
+        using allocator_type = Allocator;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using reference = value_type&;
+        using const_reference = const value_type&;
+        using pointer = alloc_traits::pointer;
+        using const_pointer = alloc_traits::const_pointer;
+        // TODO: Need to define own iterator class?
+        //using iterator = int;
+        //using const_iterator = int;
+        //using reverse_iterator = std::reverse_iterator<iterator>;
+        //using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        vector() : vector(Allocator()) {}
+        explicit vector(const Allocator& alloc) :
+            _alloc{alloc}, _data{nullptr}, _sz{0}, _cap{0}
         {}
 
-        Vector(const T* a, std::size_t sz) :
-            _data{nullptr},
-            _size{sz},
-            _capacity{0},
-            _alloc_count{0}
+        explicit vector(size_type count, const Allocator& alloc = Allocator()) :
+            _alloc{alloc}, _data{alloc_traits::allocate(_alloc, count)}, _sz{count}, _cap{count}
         {
-            maybe_expand();
-            std::memcpy(_data, a, sz * sizeof(T)); // Note: didn't call ctor for elements :/
+            for (size_type i = 0; i < _sz; ++i)
+                alloc_traits::construct(_alloc, _data + i);
         }
 
-        Vector(const Vector& r) :
-            _data{new T[r._capacity]},
-            _size{r._size},
-            _capacity{r._capacity},
-            _alloc_count{1}
+        ~vector()
         {
-            std::memcpy(_data, r._data, r._size * sizeof(T)); // Note: same here...
+            for (size_type i = 0; i < _sz; ++i)
+                alloc_traits::destroy(_alloc, _data + i);
+            alloc_traits::deallocate(_alloc, _data, _cap);
         }
-
-        ~Vector() { delete[] _data; }
-
-        Vector& operator=(const Vector& r)
-        {
-            if (this == &r)
-                return *this;
-
-            clear();
-
-            _size = r._size;
-            _capacity = r._capacity;
-            _alloc_count = r._alloc_count;
-
-            delete[] _data;
-            _data = new T[_capacity];
-            std::memcpy(_data, r._data, r._size * sizeof(T));
-
-            return *this;
-        }
-
-        void push_back(const T& v)
-        {
-            maybe_expand();
-            _data[_size++] = v;
-        }
-
-        void push_front(const T& v)
-        {
-            insert(v, 0);
-        }
-
-        void pop_back() { _data[--_size].~T(); }
-        void pop_front() { erase(0); }
-
-        void remove(const T& val)
-        {
-            for (std::size_t i = 0; i < _size; ++i)
-                if (_data[i] == val)
-                {
-                    erase(i);
-                    return;
-                }
-        }
-
-        void insert(const T& v, std::size_t index)
-        {
-            maybe_expand();
-            for (auto i = _size; i > index; --i)
-                _data[i] = _data[i - 1];
-            _data[index] = v;
-            ++_size;
-        }
-
-        void clear()
-        {
-            delete[] _data;
-            _data = nullptr;
-            _capacity = _size = 0;
-        }
-
-        Vector& operator+=(const Vector& r)
-        {
-            const auto oldSize = _size;
-            _size += r._size;
-            maybe_expand();
-
-            std::memcpy(_data + oldSize, r._data, r._size * sizeof(T));
-
-            return *this;
-        }
-
-        bool empty() const { return _size == 0; }
-        std::size_t inline size() const { return _size; }
-        std::size_t inline capacity() const { return _capacity; }
-        std::size_t inline allocations() const { return _alloc_count; }
-
-        T& operator[] (int i) { return _data[i]; }
-        const T& operator[] (int i) const { return _data[i]; }
 
     private:
-        T* _data;
-        std::size_t _size, _capacity, _alloc_count;
-
-        void maybe_expand()
-        {
-            if (_size < _capacity)
-                return;
-
-            _capacity = _capacity == 0 ? 1 : (_capacity << 1);
-            while (_capacity < _size)
-                _capacity <<= 1;
-
-            auto *newData = new T[_capacity];
-
-            if (_data != nullptr)
-                std::memcpy(newData, _data, _size * sizeof(T));
-
-            delete[] _data;
-            _data = newData;
-
-            ++_alloc_count;
-        }
-
-        void erase(std::size_t index)
-        {
-            _data[index].~T(); // Make sure to destroy the removed element first
-            --_size;
-            for (std::size_t i = index; i < _size; ++i)
-                _data[i] = _data[i + 1];
-        }
+        allocator_type _alloc;
+        pointer _data;
+        size_type _sz, _cap;
     };
-
-    template<typename T>
-    Vector<T> operator+(const Vector<T>& l, const Vector<T>& r)
-    {
-        auto ret{l};
-        ret += r;
-        return ret;
-    }
-
-    template<typename T>
-    void Print(const Vector<T> &v)
-    {
-        for (std::size_t i = 0; i < v.size(); ++i)
-            std::cout << v[i] << "  ";
-
-        std::cout
-            << "("
-            << "size=" << v.size() << ", "
-            << "capacity=" << v.capacity() << ", "
-            << "allocs=" << v.allocations() << ")" << std::endl;
-    }
-
-    template<>
-    void Print(const Vector<float> &v)
-    {
-        for (std::size_t i = 0; i < v.size(); ++i)
-            std::cout << std::setprecision(3) << std::setw(5) << v[i] << "  ";
-
-        std::cout
-            << "("
-            << "size=" << v.size() << ", "
-            << "capacity=" << v.capacity() << ", "
-            << "allocs=" << v.allocations() << ")" << std::endl;
-    }
-
-    template<>
-    void Print(const Vector<unsigned char> &v)
-    {
-        for (std::size_t i = 0; i < v.size(); ++i)
-            std::cout << static_cast<unsigned>(v[i]) << "  ";
-
-        std::cout
-            << "("
-            << "size=" << v.size() << ", "
-            << "capacity=" << v.capacity() << ", "
-            << "allocs=" << v.allocations() << ")" << std::endl;
-    }
-
-    template<>
-    void Print(const Vector<double> &v)
-    {
-        for (std::size_t i = 0; i < v.size(); ++i)
-            std::cout
-                << std::left << std::setprecision(5) << std::setw(7)
-                << v[i] << "  ";
-
-        std::cout
-            << "("
-            << "size=" << v.size() << ", "
-            << "capacity=" << v.capacity() << ", "
-            << "allocs=" << v.allocations() << ")" << std::endl;
-    }
 }
