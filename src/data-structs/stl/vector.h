@@ -203,6 +203,19 @@ namespace mystl
             auto newCap = _cap == 0 ? 1 : _cap;
             while (newCap <= _sz) newCap <<= 1; // Keep doubling until large enough
             auto newData = alloc_traits::allocate(_alloc, newCap);
+
+            /*
+             * This is an observation from gcc's implementation, which copies the
+             * old data instead of moving them, and it surprised me because moving
+             * the data would be a more efficient approach. However, it dawned on
+             * me that doing so will violate the requirement of leaving the container
+             * in a valid state (i.e. before expansion) if an exception is thrown
+             * (e.g. whilst moving an element).
+             * 
+             * This reveals a possible reason to implement a more efficient custom
+             * vector-like container if one can guarantee that the move operation
+             * on their elements will never throw exceptions.
+             */
             std::uninitialized_copy_n(_data, _sz, newData);
 
             std::swap(_cap, newCap);
