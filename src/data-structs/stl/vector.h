@@ -159,15 +159,91 @@ namespace mystl
 
         // Modifiers
         /**********************************************************************/
-        constexpr void push_back(const T& value)
+        constexpr void clear() noexcept
         {
-            maybe_expand();
-            alloc_traits::construct(_alloc, _data + _sz++, value);
+            for (size_type i = 0; i < _sz; ++i)
+                alloc_traits::destroy(_alloc, _data + i);
+            _sz = 0;
         }
-        constexpr void push_back(T&& value)
+
+        template<typename TVal>
+        constexpr void push_back(TVal&& value)
         {
             maybe_expand();
-            alloc_traits::construct(_alloc, _data + _sz++, std::move(value));
+            alloc_traits::construct(_alloc, _data + _sz++, std::forward<TVal>(value));
+        }
+        template<typename... Args>
+        constexpr reference emplace_back(Args&&... args)
+        {
+            maybe_expand();
+            alloc_traits::construct(_alloc, _data + _sz, std::forward<Args>(args)...);
+            return _data[_sz++];
+        }
+
+        template<typename TVal>
+        constexpr iterator insert(const_iterator pos, TVal&& value)
+        {
+            const auto index = pos - cbegin();
+            maybe_expand();
+            std::uninitialized_move_n(rbegin(), _sz - index, std::prev(rbegin()));
+            const auto ins = begin() + index;
+            alloc_traits::construct(_alloc, ins, std::forward<TVal>(value));
+            ++_sz;
+            return ins;
+        }
+        constexpr iterator insert(const_iterator pos, size_type count, const T& value)
+        {
+            // TODO: Possible to eliminate moves when expansion is required (Perform action on new mem, then copy old elems to correct new pos)
+            const auto index = pos - cbegin();
+            maybe_expand(count);
+
+            auto d_it = rbegin();
+            std::advance(d_it, -count);
+            std::uninitialized_move_n(rbegin(), _sz - index, d_it);
+            const auto ins = begin() + index;
+            std::uninitialized_fill_n(ins, count, value);
+            _sz += count;
+            return ins;
+        }
+        template<typename InputIt>
+        constexpr iterator insert(const_iterator pos, InputIt first, InputIt last)
+        {
+            const auto index = pos - cbegin();
+            maybe_expand();
+
+            const auto cnt = static_cast<size_type>(std::distance(first, last));
+            auto d_it = rbegin();
+            std::advance(d_it, -cnt);
+            std::uninitialized_move_n(rbegin(), _sz - index, d_it);
+            const auto ins = begin() + index;
+            std::uninitialized_copy(first, last, ins);
+            _sz += cnt;
+            return ins;
+        }
+        constexpr iterator insert(const_iterator pos, std::initializer_list<T> ilist)
+        {
+            return insert(pos, ilist.begin(), ilist.end());
+        }
+
+        template<typename... Args>
+        iterator emplace(const_iterator pos, Args&&... args)
+        {
+            // TODO: Possible to eliminate moves when expansion is required (Perform action on new mem, then copy old elems to correct new pos)
+            const auto index = pos - cbegin();
+            maybe_expand();
+
+            const auto ins = begin() + index;
+            if (ins == end())
+                alloc_traits::construct(_alloc, ins, std::forward<Args>(args)...);
+            else
+            {
+                T new_elem(std::forward<Args>(args)...);
+                std::uninitialized_move_n(rbegin(), _sz - index, std::prev(rbegin()));
+                *ins = std::move(new_elem);
+            }
+
+            ++_sz;
+            return ins;
         }
         /**********************************************************************/
 
@@ -176,6 +252,33 @@ namespace mystl
         constexpr bool empty() const noexcept { return _sz == 0; }
         constexpr size_type size() const noexcept { return _sz; }
         constexpr size_type capacity() const noexcept { return _cap; }
+        constexpr void reserve(size_type new_cap)
+        {
+            if (new_cap <= _cap)
+                return;
+
+            auto new_data = alloc_traits::allocate(_alloc, new_cap);
+
+            /*
+             * This is an observation from gcc's implementation, which copies the
+             * old data instead of moving them, and it surprised me because moving
+             * the data would be a more efficient approach. However, it dawned on
+             * me that doing so will violate the requirement of leaving the container
+             * in a valid state (i.e. before expansion) if an exception is thrown
+             * (e.g. whilst moving an element).
+             * 
+             * This reveals a possible reason to implement a more efficient custom
+             * vector-like container if one can guarantee that the move operation
+             * on their elements will never throw exceptions.
+             */
+            std::uninitialized_copy_n(_data, _sz, new_data);
+
+            std::swap(_cap, new_cap);
+            std::swap(_data, new_data);
+            for (size_type i = 0; i < _sz; ++i)
+                alloc_traits::destroy(_alloc, new_data + i);
+            alloc_traits::deallocate(_alloc, new_data, new_cap);
+        }
         /**********************************************************************/
 
         constexpr allocator_type get_allocator() const noexcept { return _alloc; }
@@ -195,34 +298,15 @@ namespace mystl
         size_type _sz, _cap;
         pointer _data;
 
-        constexpr void maybe_expand()
+        constexpr void maybe_expand(size_type expand_by = 1)
         {
-            if (_sz < _cap)
+            const auto expand_to = _sz + expand_by;
+            if (expand_to <= _cap)
                 return;
 
             auto newCap = _cap == 0 ? 1 : _cap;
-            while (newCap <= _sz) newCap <<= 1; // Keep doubling until large enough
-            auto newData = alloc_traits::allocate(_alloc, newCap);
-
-            /*
-             * This is an observation from gcc's implementation, which copies the
-             * old data instead of moving them, and it surprised me because moving
-             * the data would be a more efficient approach. However, it dawned on
-             * me that doing so will violate the requirement of leaving the container
-             * in a valid state (i.e. before expansion) if an exception is thrown
-             * (e.g. whilst moving an element).
-             * 
-             * This reveals a possible reason to implement a more efficient custom
-             * vector-like container if one can guarantee that the move operation
-             * on their elements will never throw exceptions.
-             */
-            std::uninitialized_copy_n(_data, _sz, newData);
-
-            std::swap(_cap, newCap);
-            std::swap(_data, newData);
-            for (size_type i = 0; i < _sz; ++i)
-                alloc_traits::destroy(_alloc, newData + i);
-            alloc_traits::deallocate(_alloc, newData, newCap);
+            while (newCap <= expand_to) newCap <<= 1; // Keep doubling until large enough
+            reserve(newCap);
         }
 
         inline constexpr void check_bounds(size_type pos) const
