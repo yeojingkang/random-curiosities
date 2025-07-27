@@ -40,6 +40,15 @@ std::ostream& operator<<(std::ostream& os, const C& c)
     return os;
 }
 
+template<template<typename> typename T>
+std::ostream& operator<<(std::ostream& os, const T<C>& v)
+{
+    os << "size " << v.size() << ": ";
+    for (const auto &i : v)
+        os << i << "  ";
+    return os;
+}
+
 template<typename T>
 void testCtor()
 {
@@ -61,6 +70,7 @@ void testPushBack()
     std::cout << "push_back lvalue..." << std::endl;
     pv.push_back(pushC);
 
+    std::cout << "size " << pv.size() << ": ";
     for (auto i = 0; i < 6; ++i)
         std::cout << pv[i] << "  ";
     std::cout << std::endl;
@@ -70,16 +80,34 @@ void testPushBack()
     const auto res1 = pv.insert(std::cbegin(pv) + 1, C{19});
     const C insC{21};
     const auto res2 = pv.insert(std::cbegin(pv) + 3, insC);
-    std::cout << *res1 << ", " << *res2 << std::endl;
-    for (const auto &i : pv)
-        std::cout << i << "  ";
-    std::cout << std::endl;
+    std::cout << *res1 << ", " << *res2 << std::endl
+              << pv << std::endl;
 
     std::cout << "inserting multiple counts of value at pos 5..." << std::endl;
     pv.insert(std::cbegin(pv) + 5, 5, C{42});
-    for (const auto &i : pv)
-        std::cout << i << "  ";
-    std::cout << std::endl;
+    std::cout << pv << std::endl;
+
+    std::cout << "erase:" << std::endl;
+    std::cout << "erasing values at pos 1 & 3..." << std::endl;
+    auto ers1 = pv.erase(std::cbegin(pv) + 1);
+    auto ers2 = pv.erase(std::cbegin(pv) + 3);
+    std::cout << *(ers1++) << ", " << *(ers2++) << std::endl;
+    std::cout << *ers1 << ", " << *ers2 << std::endl
+              << pv << std::endl;
+
+    std::cout << "erasing range 3 to 8..." << std::endl;
+    auto rers1 = pv.erase(std::cbegin(pv) + 3, std::cbegin(pv) + 8);
+    std::cout << *rers1 << ", " << *(rers1 + 1) << std::endl
+              << pv << std::endl;
+
+    std::cout << "erasing range 3 to end..." << std::endl;
+    auto rers2 = pv.erase(std::cbegin(pv) + 3, std::cend(pv));
+    std::cout << "returned itr is end(): " << (rers2 == std::cend(pv)) << std::endl
+              << pv << std::endl;
+
+    std::cout << "pop_back:" << std::endl;
+    pv.pop_back();
+    std::cout << pv << std::endl;
 }
 
 template<template<typename> typename T>
@@ -100,8 +128,10 @@ void testEmplaceBack()
     c.emplace(c.begin(), C{4}, 1);
     c.emplace(c.begin(), C{8}, 3);
     c.emplace(c.end(), C{9}, 5);
-    const auto res = c.emplace(std::next(c.begin()), C{1}, 7);
+    auto res = c.emplace(std::next(c.begin()), C{1}, 7);
     std::cout << "last emplace: " << res->first << ", " << res->second << std::endl;
+    ++res;
+    std::cout << "next elem: " << res->first << ", " << res->second << std::endl;
     std::cout << "elems: " << std::endl;
     for (const auto &[f, s] : c)
         std::cout << "\t" << f << ", " << s << std::endl;

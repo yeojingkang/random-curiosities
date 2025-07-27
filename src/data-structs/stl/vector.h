@@ -226,7 +226,7 @@ namespace mystl
         }
 
         template<typename... Args>
-        iterator emplace(const_iterator pos, Args&&... args)
+        constexpr iterator emplace(const_iterator pos, Args&&... args)
         {
             // TODO: Possible to eliminate moves when expansion is required (Perform action on new mem, then copy old elems to correct new pos)
             const auto index = pos - cbegin();
@@ -244,6 +244,38 @@ namespace mystl
 
             ++_sz;
             return ins;
+        }
+
+        constexpr iterator erase(const_iterator pos)
+        {
+            alloc_traits::destroy(_alloc, pos);
+            const auto ers = const_cast<iterator>(pos); // Forgive me
+            for (auto it = ers; it != end() - 1; ++it)
+                *it = std::move(*(it + 1));
+            --_sz;
+            return ers;
+        }
+        constexpr iterator erase(const_iterator first, const_iterator last)
+        {
+            if (first == last)
+                return const_cast<iterator>(last); // Please forgive me
+
+            const auto cnt = last - first;
+            for (auto it = first; it != last; ++it)
+                alloc_traits::destroy(_alloc, it);
+
+            auto fr = const_cast<iterator>(last);
+            auto to = const_cast<iterator>(first);
+            while (fr != end())
+                *to++ = std::move(*fr++);
+            _sz -= cnt;
+            return const_cast<iterator>(first);
+        }
+
+        constexpr void pop_back()
+        {
+            if (!empty())
+                alloc_traits::destroy(_alloc, _data + --_sz);
         }
         /**********************************************************************/
 
