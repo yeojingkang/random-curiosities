@@ -209,6 +209,14 @@ void testCapacity()
     std::cout << std::endl;
 }
 
+template<typename T>
+void testAssignment()
+{
+    std::cout << "assignment:" << std::endl;
+
+    // TODO: Add tests
+}
+
 template<template<typename> typename T>
 void testC(const std::string& name)
 {
@@ -232,6 +240,9 @@ void testC(const std::string& name)
     std::cout << std::endl;
 
     testCapacity<T<C>>();
+    std::cout << std::endl;
+
+    testAssignment<T<C>>();
     std::cout << std::endl;
 }
 

@@ -68,13 +68,11 @@ namespace mystl
         }
 
         constexpr vector(vector&& other) noexcept :
-            _alloc{std::move(other._alloc)},
+            _alloc{std::move(other.get_allocator())},
             _sz{std::move(other._sz)},
             _cap{std::move(other._cap)},
             _data{std::move(other._data)}
         {
-            other._sz = 0;
-            other._data = nullptr;
         }
 
         vector(std::initializer_list<T> init, const Allocator& alloc = Allocator()) :
@@ -95,13 +93,59 @@ namespace mystl
         // Assignments
         /**********************************************************************/
         constexpr vector& operator=(const vector& other)
+            noexcept(alloc_traits::propagate_on_container_move_assignment::value || alloc_traits::is_always_equal::value)
         {
             if (this == &other)
                 return *this;
 
-            // TODO: Implement
+            // Duplicate code!!! Lambda instead?
+            if constexpr (alloc_traits::propagate_on_container_copy_assignment::value)
+            {
+                auto copy_alloc = other.get_allocator();
 
-            return * this;
+                // Memory must be realloc-ed if allocator or capacity changes
+                auto copy_to = copy_alloc != _alloc || other._cap != _cap
+                    ? alloc_traits::allocate(copy_alloc, other._cap)
+                    : _data;
+
+                std::copy(other.begin(), other.end(), copy_to);
+
+                // Destroy old data, taking care to avoid any copied elements
+                for (size_type i = copy_to != _data ? 0 : other._sz; i < _sz; ++i)
+                    alloc_traits::destroy(_alloc, _data + i);
+
+                if (copy_to != data)
+                {
+                    alloc_traits::deallocate(_alloc, _data, _cap);
+                    _data = copy_to;
+                }
+
+                _alloc = std::move(copy_alloc);
+            }
+            else
+            {
+                // Reuse existing memory if capacity is same
+                auto copy_to = other._cap != _cap
+                    ? alloc_traits::allocate(_alloc, other._cap)
+                    : _data;
+
+                std::copy(other.begin(), other.end(), copy_to);
+
+                // Destroy old data, taking care to avoid any copied elements
+                for (size_type i = copy_to != _data ? 0 : other._sz; i < _sz; ++i)
+                    alloc_traits::destroy(_alloc, _data + i);
+
+                if (copy_to != data)
+                {
+                    alloc_traits::deallocate(_alloc, _data, _cap);
+                    _data = copy_to;
+                }
+            }
+
+            _cap = other._cap;
+            _sz = other._sz;
+
+            return *this;
         }
 
         constexpr vector& operator=(vector&& other)
@@ -109,10 +153,19 @@ namespace mystl
             if (this == &other)
                 return *this;
 
-            _alloc = std::move(other._alloc);
+            if constexpr (alloc_traits::propagate_on_container_move_assignment::value)
+            {
+                _alloc = other.get_allocator();
+                _data = std::move(other._data);
+            }
+            else
+            {
+                // Not allowed to copy other's allocator. Move elements individually (alloc more mem. if necessary)
+            }
+
             _sz = std::move(other._sz);
             _cap = std::move(other._cap);
-            _data = std::move(other._data);
+
             return *this;
         }
         /**********************************************************************/
