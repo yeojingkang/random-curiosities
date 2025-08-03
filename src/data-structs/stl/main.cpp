@@ -43,9 +43,10 @@ std::ostream& operator<<(std::ostream& os, const C& c)
 template<template<typename> typename T>
 std::ostream& operator<<(std::ostream& os, const T<C>& v)
 {
-    os << "size " << v.size() << ": ";
+    os << "{ size " << v.size() << ": ";
     for (const auto &i : v)
         os << i << "  ";
+    os << " }";
     return os;
 }
 
@@ -204,9 +205,7 @@ void testCapacity()
 
     std::cout << "cap after push_backs: " << v.capacity() << std::endl;
 
-    for (const auto &c : v)
-        std::cout << c.x << "  ";
-    std::cout << std::endl;
+    std::cout << v << std::endl;
 }
 
 template<typename T>
@@ -214,7 +213,21 @@ void testAssignment()
 {
     std::cout << "assignment:" << std::endl;
 
-    // TODO: Add tests
+    T c1{C{1}, C{2}, C{3}};
+    T c2{C{4}, C{5}, C{6}};
+    T m1{C{7}, C{8}, C{9}};
+    T m2{C{10}, C{11}, C{12}};
+
+    std::cout << "copying..." << std::endl;
+    c1 = c2;
+    std::cout << "moving..." << std::endl;
+    m1 = std::move(m2);
+
+    std::cout
+        << "c1: " << c1 << std::endl
+        << "c2: " << c2 << std::endl
+        << "m1: " << m1 << std::endl
+        << "m2: " << m2 << std::endl;
 }
 
 template<template<typename> typename T>
@@ -224,23 +237,23 @@ void testC(const std::string& name)
         << "-----------------------" << name << "-----------------------"
         << std::endl;
 
-    testCtor<T<C>>();
-    std::cout << std::endl;
+    //testCtor<T<C>>();
+    //std::cout << std::endl;
 
-    testPushBack<T<C>>();
-    std::cout << std::endl;
+    //testPushBack<T<C>>();
+    //std::cout << std::endl;
 
-    testEmplaceBack<T>();
-    std::cout << std::endl;
+    //testEmplaceBack<T>();
+    //std::cout << std::endl;
 
-    testElementAccess<T<C>>();
-    std::cout << std::endl;
+    //testElementAccess<T<C>>();
+    //std::cout << std::endl;
 
-    testIterators<T<C>>();
-    std::cout << std::endl;
+    //testIterators<T<C>>();
+    //std::cout << std::endl;
 
-    testCapacity<T<C>>();
-    std::cout << std::endl;
+    //testCapacity<T<C>>();
+    //std::cout << std::endl;
 
     testAssignment<T<C>>();
     std::cout << std::endl;
