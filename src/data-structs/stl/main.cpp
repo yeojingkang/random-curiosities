@@ -43,7 +43,9 @@ std::ostream& operator<<(std::ostream& os, const C& c)
 template<template<typename> typename T>
 std::ostream& operator<<(std::ostream& os, const T<C>& v)
 {
-    os << "{ size " << v.size() << ": ";
+    os
+        << "{ sz " << v.size() << ", "
+        << "cap " << v.capacity() << ": ";
     for (const auto &i : v)
         os << i << "  ";
     os << " }";
@@ -215,19 +217,46 @@ void testAssignment()
 
     T c1{C{1}, C{2}, C{3}};
     T c2{C{4}, C{5}, C{6}};
+    T c3{C{111}};
+    T c4{C{200}, C{201}, C{202}, C{203}};
     T m1{C{7}, C{8}, C{9}};
     T m2{C{10}, C{11}, C{12}};
+    T m3{C{0}};
+    T m4{C{30}, C{123}, C{44}, C{998}};
 
-    std::cout << "copying..." << std::endl;
+    std::cout << "copying same size..." << std::endl;
     c1 = c2;
-    std::cout << "moving..." << std::endl;
+    std::cout << "moving same size..." << std::endl;
     m1 = std::move(m2);
-
     std::cout
         << "c1: " << c1 << std::endl
         << "c2: " << c2 << std::endl
         << "m1: " << m1 << std::endl
         << "m2: " << m2 << std::endl;
+
+    std::cout << "copying smaller..." << std::endl;
+    c1 = c3;
+    std::cout << "moving smaller..." << std::endl;
+    m1 = std::move(m3);
+    std::cout
+        << "c1: " << c1 << std::endl
+        << "c3: " << c3 << std::endl
+        << "m1: " << m1 << std::endl
+        << "m3: " << m3 << std::endl;
+
+    std::cout << "copying larger..." << std::endl;
+    c1 = c4;
+    std::cout << "moving larger..." << std::endl;
+    m1 = std::move(m4);
+    std::cout
+        << "c1: " << c1 << std::endl
+        << "c4: " << c4 << std::endl
+        << "m1: " << m1 << std::endl
+        << "m4: " << m4 << std::endl;
+
+    std::cout << "moving from real temp..." << std::endl;
+    m1 = T{C{-234}};
+    std::cout << "m1: " << m1 << std::endl;
 }
 
 template<template<typename> typename T>

@@ -105,41 +105,44 @@ namespace mystl
                 auto copy_alloc = other.get_allocator();
 
                 // Memory must be realloc-ed if allocator or capacity changes
-                auto copy_to = copy_alloc != _alloc || other._cap != _cap
+                auto copy_to = copy_alloc != _alloc || other._sz > _cap
                     ? alloc_traits::allocate(copy_alloc, other._cap)
                     : _data;
 
                 std::copy(other.begin(), other.end(), copy_to);
 
+                for (size_type i = copy_to != _data ? 0 : other._sz; i < _sz; ++i)
+                    alloc_traits::destroy(_alloc, _data + i);
+
                 if (copy_to != data)
                 {
-                    for (size_type i = 0; i < _sz; ++i)
-                        alloc_traits::destroy(_alloc, _data + i);
                     alloc_traits::deallocate(_alloc, _data, _cap);
                     _data = copy_to;
+                    _cap = other._cap;
                 }
 
                 _alloc = std::move(copy_alloc);
             }
             else
             {
-                // Reuse existing memory if capacity is same
-                auto copy_to = other._cap != _cap
+                // Reuse existing memory if capacity is large enough
+                auto copy_to = other._sz > _cap
                     ? alloc_traits::allocate(_alloc, other._cap)
                     : _data;
 
                 std::copy(other.begin(), other.end(), copy_to);
 
+                for (size_type i = copy_to != _data ? 0 : other._sz; i < _sz; ++i)
+                    alloc_traits::destroy(_alloc, _data + i);
+
                 if (copy_to != _data)
                 {
-                    for (size_type i = 0; i < _sz; ++i)
-                        alloc_traits::destroy(_alloc, _data + i);
                     alloc_traits::deallocate(_alloc, _data, _cap);
                     _data = copy_to;
+                    _cap = other._cap;
                 }
             }
 
-            _cap = other._cap;
             _sz = other._sz;
 
             return *this;
