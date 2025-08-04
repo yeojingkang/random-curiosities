@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <tuple>
+#include <string_view>
+#include <compare>
 
 class C
 {
@@ -30,6 +32,9 @@ public:
         std::cout << "C move assignment" << std::endl;
         return *this;
     }
+
+    bool operator==(const C& other) const = default;
+    std::strong_ordering operator<=>(const C& other) const = default;
 
     int x;
 };
@@ -259,6 +264,63 @@ void testAssignment()
     std::cout << "m1: " << m1 << std::endl;
 }
 
+template<typename T>
+void testResize()
+{
+    std::cout << "resize:" << std::endl;
+
+    T v{C{1}, C{2}, C{3}};
+
+    std::cout << "resize same size..." << std::endl;
+    v.resize(v.size());
+    std::cout << v << std::endl;
+
+    std::cout << "resize smaller..." << std::endl;
+    v.resize(1);
+    std::cout << v << std::endl;
+
+    std::cout << "resize larger..." << std::endl;
+    v.resize(5);
+    std::cout << v << std::endl;
+
+    std::cout << "resize smaller w value..." << std::endl;
+    v.resize(2, C{9});
+    std::cout << v << std::endl;
+
+    std::cout << "resize larger w value..." << std::endl;
+    v.resize(8, C{8});
+    std::cout << v << std::endl;
+}
+
+template<typename T>
+void testComparisons()
+{
+    std::cout << "comparisons:" << std::endl;
+
+    T v1{C{1}, C{2}, C{3}};
+    T v2{C{1}, C{2}, C{3}};
+    T v3{C{2}, C{1}, C{3}};
+    T v4{C{0}};
+    T v5{C{6}, C{7}, C{8}, C{4}, C{5}};
+
+    auto comp = [](const auto& a, const auto& b, std::string_view an, std::string_view bn)
+    {
+        std::cout
+            << an << " == " << bn << ": " << (a == b) << std::endl
+            << an << " != " << bn << ": " << (a != b) << std::endl
+            << an << " > " << bn << ": " << (a > b) << std::endl
+            << an << " >= " << bn << ": " << (a >= b) << std::endl
+            << an << " < " << bn << ": " << (a < b) << std::endl
+            << an << " <= " << bn << ": " << (a <= b) << std::endl
+            << std::endl;
+    };
+
+    comp(v1, v2, "v1", "v2");
+    comp(v1, v3, "v1", "v3");
+    comp(v1, v4, "v1", "v4");
+    comp(v1, v5, "v1", "v5");
+}
+
 template<template<typename> typename T>
 void testC(const std::string& name)
 {
@@ -284,7 +346,13 @@ void testC(const std::string& name)
     //testCapacity<T<C>>();
     //std::cout << std::endl;
 
-    testAssignment<T<C>>();
+    //testAssignment<T<C>>();
+    //std::cout << std::endl;
+
+    //testResize<T<C>>();
+    //std::cout << std::endl;
+
+    testComparisons<T<C>>();
     std::cout << std::endl;
 }
 

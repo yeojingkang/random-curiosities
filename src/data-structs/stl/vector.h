@@ -360,6 +360,9 @@ namespace mystl
             if (!empty())
                 alloc_traits::destroy(_alloc, _data + --_sz);
         }
+
+        constexpr void resize(size_type count) { resize_impl(count); }
+        constexpr void resize(size_type count, const value_type& value) { resize_impl(count, value); }
         /**********************************************************************/
 
         // Capacity
@@ -398,7 +401,8 @@ namespace mystl
 
         constexpr allocator_type get_allocator() const noexcept { return _alloc; }
 
-        constexpr void swap(vector& other) noexcept
+        constexpr void swap(vector& other)
+            noexcept(alloc_traits::propagate_on_container_swap::value || alloc_traits::is_always_equal::value)
         {
             if constexpr (alloc_traits::propagate_on_container_swap::value)
                 std::swap(_alloc, other._alloc);
@@ -406,6 +410,20 @@ namespace mystl
             std::swap(_sz, other._sz);
             std::swap(_cap, other._cap);
             std::swap(_data, other._data);
+        }
+
+        constexpr bool operator==(const vector& other) const
+        {
+            if (this == &other)
+                return true;
+            if (_sz != other._sz)
+                return false;
+            return std::equal(begin(), end(), other.begin(), other.end());
+        }
+
+        constexpr auto operator<=>(const vector& other) const
+        {
+            return std::lexicographical_compare_three_way(begin(), end(), other.begin(), other.end());
         }
 
     private:
@@ -428,6 +446,28 @@ namespace mystl
         {
             if (pos >= _sz)
                 throw std::out_of_range{std::format("vector: index {} out of range of size {}", pos, _sz)};
+        }
+
+        template<typename... Args>
+        constexpr void resize_impl(size_type count, Args&&... args)
+        {
+            if (count == _sz)
+                return;
+
+            if (count < _sz)
+            {
+                for (size_type i = count; i < _sz; ++i)
+                    alloc_traits::destroy(_alloc, _data + i);
+                _sz = count;
+                return;
+            }
+
+            maybe_expand(count - _sz);
+
+            for (size_type i = _sz; i < count; ++i)
+                alloc_traits::construct(_alloc, _data + i, std::forward<Args>(args)...);
+
+            _sz = count;
         }
     };
 }
