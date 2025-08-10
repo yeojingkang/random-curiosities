@@ -36,3 +36,7 @@ My implementation is far from perfect and probably contains more mistakes than I
 - A few algorithms in `<algorithm>`
 - `auto` function return type
 - `std::format`
+
+### hive
+
+As of the time I wrote this, hive has yet to be added to the STL. I will implement this data structure as specified by the [original paper](https://isocpp.org/files/papers/P0447R19.html).
